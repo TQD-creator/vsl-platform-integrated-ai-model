@@ -1,0 +1,16 @@
+# Flask API
+Flask>=2.3.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
+
+# Core dependencies
+numpy<2.0
+
+# Machine Learning
+scikit-learn<1.5
+joblib
+
+# Vietnamese Accent Restoration
+torch
+transformers
+

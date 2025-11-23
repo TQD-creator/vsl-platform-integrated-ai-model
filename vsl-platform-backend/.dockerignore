@@ -1,0 +1,15 @@
+target/
+.mvn/
+.idea/
+.vscode/
+*.iml
+*.log
+.git/
+.gitignore
+README.md
+HELP.md
+ELASTICSEARCH_SETUP.md
+postgres-data/
+elasticsearch-data/
+*.md
+
