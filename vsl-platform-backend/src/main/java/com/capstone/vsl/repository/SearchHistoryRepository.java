@@ -9,9 +9,11 @@ import java.util.List;
 
 @Repository
 public interface SearchHistoryRepository extends JpaRepository<SearchHistory, Long> {
-    
+
     List<SearchHistory> findByUserOrderBySearchedAtDesc(User user);
-    
+
     List<SearchHistory> findByUserOrderBySearchedAtDesc(User user, org.springframework.data.domain.Pageable pageable);
+
+    void deleteByUser(User user);
 }
 

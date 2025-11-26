@@ -105,6 +105,20 @@ public class UserFeatureService {
     }
 
     /**
+     * Clear user's search history
+     *
+     * @param username Username of the authenticated user
+     */
+    @Transactional
+    public void clearUserSearchHistory(String username) {
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        searchHistoryRepository.deleteByUser(user);
+        log.info("Cleared search history for user: {}", username);
+    }
+
+    /**
      * Create a report for a dictionary word
      *
      * @param wordId Dictionary word ID

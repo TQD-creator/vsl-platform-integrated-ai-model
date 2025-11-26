@@ -70,6 +70,28 @@ public class ContributionService {
     }
 
     /**
+     * Get contributions created by a specific user (for "My Contributions" view)
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<ContributionDTO> getUserContributions(String username) {
+        var contributions = contributionRepository.findByUserUsernameOrderByCreatedAtDesc(username);
+        log.debug("Retrieved {} contributions for user: {}", contributions.size(), username);
+        return contributions.stream()
+                .map(this::contributionToDTO)
+                .toList();
+    }
+
+    /**
+     * Get contribution details by ID (for admin detail view)
+     */
+    @Transactional(readOnly = true)
+    public ContributionDTO getContributionById(Long id) {
+        var contribution = contributionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Contribution not found: " + id));
+        return contributionToDTO(contribution);
+    }
+
+    /**
      * Convert Contribution entity to DTO
      */
     private ContributionDTO contributionToDTO(Contribution contribution) {

@@ -3,6 +3,7 @@ package com.capstone.vsl.service;
 import com.capstone.vsl.dto.ContributionDTO;
 import com.capstone.vsl.dto.DashboardStatsDTO;
 import com.capstone.vsl.dto.DictionaryDTO;
+import com.capstone.vsl.dto.RegisterRequest;
 import com.capstone.vsl.dto.UserDTO;
 import com.capstone.vsl.entity.Contribution;
 import com.capstone.vsl.entity.ContributionStatus;
@@ -202,6 +203,79 @@ public class AdminService {
     }
 
     /**
+     * Create a new user account (admin action).
+     * Similar to registration but returns UserDTO instead of AuthResponse.
+     * Default role is USER (admin can change it later via updateUserRole).
+     *
+     * @param request Registration request with user details
+     * @return Created user DTO
+     * @throws IllegalArgumentException if username/email already exists
+     */
+    @Transactional
+    public UserDTO createUser(RegisterRequest request) {
+        log.info("Admin creating user: username={}, email={}", request.getUsername(), request.getEmail());
+
+        // Check if username already exists
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new IllegalArgumentException("Username already exists: " + request.getUsername());
+        }
+
+        // Check if email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already exists: " + request.getEmail());
+        }
+
+        // Determine avatar URL: use provided one or generate default
+        String avatarUrl = request.getAvatarUrl();
+        if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
+            avatarUrl = "https://robohash.org/" + request.getUsername();
+        }
+
+        // Create new user with extended profile fields
+        var user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.USER) // Default role is USER (admin can change later)
+                .fullName(request.getFullName())
+                .phoneNumber(request.getPhoneNumber())
+                .dateOfBirth(request.getDateOfBirth())
+                .avatarUrl(avatarUrl)
+                .bio(request.getBio())
+                .address(request.getAddress())
+                .build();
+
+        user = userRepository.save(user);
+        log.info("Admin created user: id={}, username={}", user.getId(), user.getUsername());
+
+        return userToDTO(user);
+    }
+
+    /**
+     * Delete a user account (admin action).
+     * Prevents admin from deleting their own account.
+     *
+     * @param userId ID of user to delete
+     * @param currentAdminId ID of current admin (to prevent self-deletion)
+     * @throws IllegalArgumentException if user not found or trying to delete own account
+     */
+    @Transactional
+    public void deleteUser(Long userId, Long currentAdminId) {
+        log.info("Admin deleting user: userId={}, currentAdminId={}", userId, currentAdminId);
+
+        // Critical security: Prevent admin from deleting themselves
+        if (userId.equals(currentAdminId)) {
+            throw new IllegalArgumentException("Cannot delete your own account");
+        }
+
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        userRepository.delete(user);
+        log.info("Admin deleted user: id={}, username={}", user.getId(), user.getUsername());
+    }
+
+    /**
      * Get contributions by status
      *
      * @param status Contribution status (PENDING, APPROVED, REJECTED)
@@ -214,6 +288,16 @@ public class AdminService {
         return contributions.stream()
                 .map(this::contributionToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get single contribution by ID
+     */
+    @Transactional(readOnly = true)
+    public ContributionDTO getContributionById(Long id) {
+        var contribution = contributionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Contribution not found: " + id));
+        return contributionToDTO(contribution);
     }
 
     /**
@@ -247,6 +331,12 @@ public class AdminService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .phoneNumber(user.getPhoneNumber())
+                .dateOfBirth(user.getDateOfBirth())
+                .avatarUrl(user.getAvatarUrl())
+                .bio(user.getBio())
+                .address(user.getAddress())
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())

@@ -63,13 +63,23 @@ public class AuthController {
             // Generate JWT token
             String token = jwtUtils.generateToken(userPrincipal.getUsername());
 
-            // Build response
+            // Fetch full user entity to get profile fields
+            var user = userRepository.findByUsername(userPrincipal.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found after authentication"));
+
+            // Build response with all profile fields
             var authResponse = AuthResponse.builder()
                     .token(token)
                     .type("Bearer")
-                    .username(userPrincipal.getUsername())
-                    .email(userPrincipal.getEmail())
-                    .role(userPrincipal.getRole().name())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .role(user.getRole().name())
+                    .fullName(user.getFullName())
+                    .phoneNumber(user.getPhoneNumber())
+                    .dateOfBirth(user.getDateOfBirth())
+                    .avatarUrl(user.getAvatarUrl())
+                    .bio(user.getBio())
+                    .address(user.getAddress())
                     .build();
 
             log.info("User logged in successfully: {}", userPrincipal.getUsername());
@@ -105,12 +115,24 @@ public class AuthController {
                         .body(ApiResponse.error("Email already exists"));
             }
 
-            // Create new user
+            // Determine avatar URL: use provided one or generate default
+            String avatarUrl = registerRequest.getAvatarUrl();
+            if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
+                avatarUrl = "https://robohash.org/" + registerRequest.getUsername();
+            }
+
+            // Create new user with extended profile fields
             var user = User.builder()
                     .username(registerRequest.getUsername())
                     .email(registerRequest.getEmail())
                     .password(passwordEncoder.encode(registerRequest.getPassword()))
                     .role(Role.USER) // Default role is USER
+                    .fullName(registerRequest.getFullName())
+                    .phoneNumber(registerRequest.getPhoneNumber())
+                    .dateOfBirth(registerRequest.getDateOfBirth())
+                    .avatarUrl(avatarUrl)
+                    .bio(registerRequest.getBio())
+                    .address(registerRequest.getAddress())
                     .build();
 
             userRepository.save(user);
@@ -118,13 +140,19 @@ public class AuthController {
             // Generate JWT token for immediate login
             String token = jwtUtils.generateToken(user.getUsername());
 
-            // Build response
+            // Build response with all profile fields
             var authResponse = AuthResponse.builder()
                     .token(token)
                     .type("Bearer")
                     .username(user.getUsername())
                     .email(user.getEmail())
                     .role(user.getRole().name())
+                    .fullName(user.getFullName())
+                    .phoneNumber(user.getPhoneNumber())
+                    .dateOfBirth(user.getDateOfBirth())
+                    .avatarUrl(user.getAvatarUrl())
+                    .bio(user.getBio())
+                    .address(user.getAddress())
                     .build();
 
             log.info("User registered successfully: {}", user.getUsername());

@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,5 +25,13 @@ public class RegisterRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+    
+    // Optional profile fields (no validation constraints)
+    private String fullName;
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
+    private String avatarUrl;
+    private String bio;
+    private String address;
 }
 

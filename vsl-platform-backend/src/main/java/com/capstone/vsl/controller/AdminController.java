@@ -5,6 +5,7 @@ import com.capstone.vsl.dto.ApiResponse;
 import com.capstone.vsl.dto.ContributionDTO;
 import com.capstone.vsl.dto.DashboardStatsDTO;
 import com.capstone.vsl.dto.DictionaryDTO;
+import com.capstone.vsl.dto.RegisterRequest;
 import com.capstone.vsl.dto.RoleUpdateRequest;
 import com.capstone.vsl.dto.UserDTO;
 import com.capstone.vsl.entity.ContributionStatus;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -134,6 +136,73 @@ public class AdminController {
         }
     }
 
+    /**
+     * POST /api/admin/users
+     * Create a new user account (admin action).
+     * Allows admin to manually create accounts for staff or other users.
+     * Default role is USER (admin can change it later via updateUserRole).
+     *
+     * @param request Registration request with user details
+     * @return Created user DTO
+     */
+    @PostMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserDTO>> createUser(
+            @Valid @RequestBody RegisterRequest request) {
+        try {
+            log.info("Admin creating user: username={}", request.getUsername());
+            var createdUser = adminService.createUser(request);
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("User created successfully", createdUser));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to create user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to create user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to create user: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/admin/users/{userId}
+     * Delete a user account (admin action).
+     * Prevents admin from deleting their own account.
+     *
+     * @param userId ID of user to delete
+     * @param authentication Current authentication (to get current admin ID)
+     * @return Success message
+     */
+    @DeleteMapping("/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> deleteUser(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        try {
+            // Get current admin ID from authentication
+            var userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            var currentAdminId = userPrincipal.getId();
+
+            log.info("Admin deleting user: userId={}, currentAdminId={}", userId, currentAdminId);
+            adminService.deleteUser(userId, currentAdminId);
+            
+            return ResponseEntity.ok(ApiResponse.success(
+                    "User deleted successfully",
+                    "User " + userId + " has been deleted"
+            ));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to delete user {}: {}", userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to delete user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to delete user: " + e.getMessage()));
+        }
+    }
+
     // ==================== Contribution Management ====================
 
     /**
@@ -157,6 +226,27 @@ public class AdminController {
             log.error("Failed to get contributions: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to retrieve contributions: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/admin/contributions/{id}
+     * Get detailed information about a single contribution
+     */
+    @GetMapping("/contributions/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ContributionDTO>> getContributionById(@PathVariable Long id) {
+        try {
+            var contribution = adminService.getContributionById(id);
+            return ResponseEntity.ok(ApiResponse.success("Contribution retrieved", contribution));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to get contribution {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to get contribution {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to retrieve contribution: " + e.getMessage()));
         }
     }
 

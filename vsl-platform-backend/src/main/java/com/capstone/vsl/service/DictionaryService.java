@@ -106,6 +106,75 @@ public class DictionaryService {
     }
 
     /**
+     * Get dictionary word by ID
+     */
+    @Transactional(readOnly = true)
+    public DictionaryDTO getWordById(Long id) {
+        var dictionary = dictionaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Dictionary word not found: " + id));
+        return entityToDTO(dictionary);
+    }
+
+    /**
+     * Get a random dictionary word (for Word of the Day, etc.)
+     */
+    @Transactional(readOnly = true)
+    public DictionaryDTO getRandomWord() {
+        var dictionary = dictionaryRepository.findRandom()
+                .orElseThrow(() -> new IllegalArgumentException("No dictionary entries available"));
+        return entityToDTO(dictionary);
+    }
+
+    /**
+     * Update an existing dictionary word
+     * 1. Update in PostgreSQL
+     * 2. Sync updated document to Elasticsearch
+     *
+     * @param id  Dictionary ID
+     * @param dto New dictionary data
+     * @return Updated dictionary DTO
+     */
+    @Transactional
+    public DictionaryDTO updateWord(Long id, DictionaryDTO dto) {
+        var dictionary = dictionaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Dictionary word not found: " + id));
+
+        dictionary.setWord(dto.getWord());
+        dictionary.setDefinition(dto.getDefinition());
+        dictionary.setVideoUrl(dto.getVideoUrl());
+        dictionary.setElasticSynced(false);
+
+        dictionary = dictionaryRepository.save(dictionary);
+        log.info("Updated dictionary word in PostgreSQL: {} (id={})", dictionary.getWord(), dictionary.getId());
+
+        syncToElasticsearch(dictionary);
+        return entityToDTO(dictionary);
+    }
+
+    /**
+     * Delete a dictionary word
+     * 1. Delete from Elasticsearch
+     * 2. Delete from PostgreSQL
+     *
+     * @param id Dictionary ID
+     */
+    @Transactional
+    public void deleteWord(Long id) {
+        var dictionary = dictionaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Dictionary word not found: " + id));
+
+        try {
+            dictionarySearchRepository.deleteById(dictionary.getId());
+            log.info("Deleted dictionary word from Elasticsearch: id={}", dictionary.getId());
+        } catch (Exception e) {
+            log.warn("Failed to delete dictionary word {} from Elasticsearch: {}", dictionary.getId(), e.getMessage());
+        }
+
+        dictionaryRepository.delete(dictionary);
+        log.info("Deleted dictionary word from PostgreSQL: id={}", dictionary.getId());
+    }
+
+    /**
      * Asynchronously sync dictionary entry to Elasticsearch
      * This method runs in a separate thread pool and does not block the main transaction
      *

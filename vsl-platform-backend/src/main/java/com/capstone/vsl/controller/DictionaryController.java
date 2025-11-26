@@ -53,6 +53,44 @@ public class DictionaryController {
     }
 
     /**
+     * GET /api/dictionary/{id}
+     * Get detailed dictionary entry by ID (public)
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<DictionaryDTO>> getById(@PathVariable Long id) {
+        try {
+            var dto = dictionaryService.getWordById(id);
+            return ResponseEntity.ok(ApiResponse.success("Dictionary word retrieved", dto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to get dictionary word {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get dictionary word: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/dictionary/random
+     * Get a random dictionary entry (public)
+     */
+    @GetMapping("/random")
+    public ResponseEntity<ApiResponse<DictionaryDTO>> getRandom() {
+        try {
+            var dto = dictionaryService.getRandomWord();
+            return ResponseEntity.ok(ApiResponse.success("Random dictionary word", dto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to get random dictionary word: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get random dictionary word: " + e.getMessage()));
+        }
+    }
+
+    /**
      * POST /api/dictionary
      * Create a new dictionary word (requires ADMIN role)
      * 
@@ -78,6 +116,52 @@ public class DictionaryController {
             log.error("Failed to create dictionary word: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to create dictionary word: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * PUT /api/admin/dictionary/{id}
+     * Update an existing dictionary word (ADMIN only)
+     */
+    @PutMapping("/admin/dictionary/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<DictionaryDTO>> updateWord(
+            @PathVariable Long id,
+            @RequestBody DictionaryDTO dto) {
+        try {
+            var updated = dictionaryService.updateWord(id, dto);
+            return ResponseEntity.ok(
+                    ApiResponse.success("Dictionary word updated successfully", updated)
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to update dictionary word {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to update dictionary word: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/admin/dictionary/{id}
+     * Delete an existing dictionary word (ADMIN only)
+     */
+    @DeleteMapping("/admin/dictionary/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> deleteWord(@PathVariable Long id) {
+        try {
+            dictionaryService.deleteWord(id);
+            return ResponseEntity.ok(
+                    ApiResponse.success("Dictionary word deleted successfully", "OK")
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to delete dictionary word {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to delete dictionary word: " + e.getMessage()));
         }
     }
 }

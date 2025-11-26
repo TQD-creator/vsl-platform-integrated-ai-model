@@ -10,11 +10,16 @@ import java.util.Optional;
 
 @Repository
 public interface ContributionRepository extends JpaRepository<Contribution, Long> {
-    
+
     List<Contribution> findByStatus(ContributionStatus status);
-    
+
     long countByStatus(ContributionStatus status);
-    
+
     Optional<Contribution> findByIdAndStatus(Long id, ContributionStatus status);
+
+    /**
+     * Get contributions of a specific user ordered by creation time (newest first).
+     */
+    List<Contribution> findByUserUsernameOrderByCreatedAtDesc(String username);
 }
 

@@ -11,11 +11,11 @@ import java.util.Optional;
 
 @Repository
 public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
-    
+
     Optional<Dictionary> findByWordIgnoreCase(String word);
-    
+
     boolean existsByWordIgnoreCase(String word);
-    
+
     /**
      * Search using PostgreSQL ILIKE (case-insensitive pattern matching)
      * Fallback when Elasticsearch is unavailable
@@ -24,5 +24,11 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
            "LOWER(d.word) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(d.definition) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<Dictionary> searchByQuery(@Param("query") String query);
+
+    /**
+     * Get a random dictionary entry (PostgreSQL specific).
+     */
+    @Query(value = "SELECT * FROM dictionary ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
+    Optional<Dictionary> findRandom();
 }
 

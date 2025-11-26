@@ -72,6 +72,32 @@ public class UserInteractionController {
     }
 
     /**
+     * DELETE /api/user/history
+     * Clear user's search history
+     */
+    @DeleteMapping("/history")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<String>> clearHistory(Authentication authentication) {
+        try {
+            var userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            var username = userPrincipal.getUsername();
+
+            log.info("Clearing search history for user: {}", username);
+            userFeatureService.clearUserSearchHistory(username);
+
+            return ResponseEntity.ok(ApiResponse.success("Search history cleared", "OK"));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to clear history: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to clear search history: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to clear search history: " + e.getMessage()));
+        }
+    }
+
+    /**
      * POST /api/user/reports
      * Create a report for a dictionary word
      * Request Body: { "wordId": 123, "reason": "Wrong video" }
@@ -151,6 +177,35 @@ public class UserInteractionController {
             log.error("Failed to create contribution: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to create contribution: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/user/contributions
+     * Get contributions created by the authenticated user
+     */
+    @GetMapping("/contributions")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ContributionDTO>>> getUserContributions(Authentication authentication) {
+        try {
+            var userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            var username = userPrincipal.getUsername();
+
+            log.info("Retrieving contributions for user: {}", username);
+            var contributions = contributionService.getUserContributions(username);
+
+            return ResponseEntity.ok(ApiResponse.success(
+                    String.format("Retrieved %d contributions", contributions.size()),
+                    contributions
+            ));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to get user contributions: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to get user contributions: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to retrieve user contributions: " + e.getMessage()));
         }
     }
 }
