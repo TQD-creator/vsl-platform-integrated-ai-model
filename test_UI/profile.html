@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile Dashboard - VSL Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #050505;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background-color: #0a0a0a;
+            border-bottom: 2px solid #00ff41;
+            padding: 8px 20px;
+            font-size: 12px;
+            letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff41;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            height: calc(100vh - 40px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: #0a0a0a;
+            border-right: 2px solid #00ff41;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: inset -20px 0 20px rgba(0, 255, 65, 0.05);
+        }
+
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff41 0%, #00aa26 100%);
+            border: 3px solid #00ff41;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+        }
+
+        .username {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+        }
+
+        .nav-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .nav-tab {
+            padding: 12px 15px;
+            border: 2px solid #00ff41;
+            background-color: transparent;
+            color: #00ff41;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background-color: #00ff41;
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        .nav-tab:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+        }
+
+        .nav-tab.active {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+            text-shadow: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: linear-gradient(to bottom, #050505, #0a0a0a);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tab-title {
+            font-size: 24px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+            letter-spacing: 2px;
+        }
+
+        /* History Tab */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+
+        .history-item {
+            padding: 12px 15px;
+            border-left: 3px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.05);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background-color: rgba(0, 255, 65, 0.1);
+            box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .history-timestamp {
+            color: #00aa26;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .history-text {
+            color: #00ff41;
+        }
+
+        /* Favorites Tab */
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .word-card {
+            padding: 20px;
+            border: 2px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .word-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .word-card:hover {
+            background-color: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .word-card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+        }
+
+        .word-card-definition {
+            font-size: 12px;
+            color: #00aa26;
+            line-height: 1.4;
+        }
+
+        /* Uploads Tab */
+        .uploads-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .uploads-table thead {
+            background-color: #0a0a0a;
+            border-bottom: 2px solid #00ff41;
+        }
+
+        .uploads-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            color: #00ff41;
+            letter-spacing: 1px;
+        }
+
+        .uploads-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+            color: #00ff41;
+        }
+
+        .uploads-table tbody tr:hover {
+            background-color: rgba(0, 255, 65, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px currentColor;
+        }
+
+        .badge-pending {
+            background-color: #ffaa00;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+        }
+
+        .badge-approved {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+        }
+
+        .badge-rejected {
+            background-color: #ff0055;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
+        }
+
+        /* Settings Tab */
+        .settings-form {
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #0a0a0a;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.6);
+            background-color: rgba(0, 255, 65, 0.05);
+        }
+
+        .form-button {
+            width: 100%;
+            padding: 12px;
+            background-color: transparent;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .form-button:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+        }
+
+        /* Overview Tab */
+        .overview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 900px;
+        }
+
+        .overview-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .overview-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff41 0%, #00aa26 100%);
+            border: 3px solid #00ff41;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.6);
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.8);
+        }
+
+        .overview-fullname {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.8);
+            letter-spacing: 1px;
+        }
+
+        .overview-bio {
+            padding: 15px;
+            border: 2px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.05);
+            font-size: 13px;
+            color: #00ff41;
+            text-align: center;
+            line-height: 1.6;
+            min-height: 80px;
+            border-radius: 3px;
+        }
+
+        .overview-right {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .overview-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .spec-item {
+            padding: 12px 15px;
+            border-left: 3px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.05);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .spec-label {
+            color: #00aa26;
+            font-weight: bold;
+        }
+
+        .spec-value {
+            color: #00ff41;
+            margin-top: 3px;
+        }
+
+        .edit-button {
+            padding: 12px 20px;
+            background-color: transparent;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-start;
+            margin-top: 15px;
+        }
+
+        .edit-button:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(5, 5, 5, 0.9);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #0a0a0a;
+            border: 2px solid #00ff41;
+            padding: 40px;
+            border-radius: 3px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.4);
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+            letter-spacing: 1px;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #00ff41;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close-btn:hover {
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+            transform: rotate(90deg);
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .modal-button {
+            flex: 1;
+            padding: 12px;
+            background-color: transparent;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-button:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+        }
+
+        .modal-button.cancel {
+            border-color: #ff0055;
+            color: #ff0055;
+        }
+
+        .modal-button.cancel:hover {
+            background-color: #ff0055;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #00ff41;
+                padding: 20px;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                gap: 30px;
+            }
+
+            .user-info {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+
+            .user-avatar {
+                margin-bottom: 0;
+                width: 70px;
+                height: 70px;
+                font-size: 30px;
+            }
+
+            .username {
+                margin-bottom: 0;
+                text-align: left;
+            }
+
+            .nav-tabs {
+                flex-direction: row;
+                gap: 10px;
+            }
+
+            .nav-tab {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .favorites-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .overview-container {
+                grid-template-columns: 1fr;
+            }
+
+            .overview-left, .overview-right {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>> SYSTEM: USER_PROFILE_LOADED</span>
+            </div>
+        </div>
+        <div class="status-right">
+            <div class="status-item">
+                <span>USER_ID: [ USR_2025_001 ]</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="user-avatar">👤</div>
+            <div class="username">Alex_Chen</div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('overview')">
+                    <i class="fas fa-user-circle"></i> OVERVIEW
+                </button>
+                <button class="nav-tab" onclick="switchTab('history')">
+                    <i class="fas fa-history"></i> HISTORY_LOG
+                </button>
+                <button class="nav-tab" onclick="switchTab('favorites')">
+                    <i class="fas fa-heart"></i> FAVORITE_DATA
+                </button>
+                <button class="nav-tab" onclick="switchTab('uploads')">
+                    <i class="fas fa-cloud-upload-alt"></i> MY_UPLOADS
+                </button>
+                <button class="nav-tab" onclick="switchTab('settings')">
+                    <i class="fas fa-cog"></i> SETTINGS
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div class="tab-title">> OVERVIEW</div>
+                <div class="overview-container">
+                    <!-- Left Column: Identity -->
+                    <div class="overview-left">
+                        <div class="overview-avatar">👤</div>
+                        <div class="overview-fullname">Alex Chen</div>
+                        <div class="overview-bio">A passionate developer and sign language enthusiast. Always learning and contributing to the VSL community.</div>
+                    </div>
+                    
+                    <!-- Right Column: System Specs -->
+                    <div class="overview-right">
+                        <div class="overview-specs">
+                            <div class="spec-item">
+                                <div class="spec-label">> EMAIL:</div>
+                                <div class="spec-value">alex.chen@example.com</div>
+                            </div>
+                            <div class="spec-item">
+                                <div class="spec-label">> PHONE:</div>
+                                <div class="spec-value">+84 901 234 567</div>
+                            </div>
+                            <div class="spec-item">
+                                <div class="spec-label">> DATE_OF_BIRTH:</div>
+                                <div class="spec-value">2000-01-15</div>
+                            </div>
+                            <div class="spec-item">
+                                <div class="spec-label">> ADDRESS:</div>
+                                <div class="spec-value">Can Tho, Vietnam</div>
+                            </div>
+                            <div class="spec-item">
+                                <div class="spec-label">> ROLE:</div>
+                                <div class="spec-value">[ USER_CLASS_1 ]</div>
+                            </div>
+                        </div>
+                        <button class="edit-button" onclick="openEditModal()">[ EDIT_PROFILE ]</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history" class="tab-content">
+                <div class="tab-title">> HISTORY_LOG</div>
+                <div class="history-list">
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 14:32]</div>
+                        <div class="history-text">Searched: "Xin chào"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 14:28]</div>
+                        <div class="history-text">Searched: "Cảm ơn"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 14:15]</div>
+                        <div class="history-text">Searched: "Tôi yêu bạn"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 13:45]</div>
+                        <div class="history-text">Searched: "Xin lỗi"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 13:20]</div>
+                        <div class="history-text">Searched: "Bao nhiêu tiền"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 12:55]</div>
+                        <div class="history-text">Searched: "Tất cả đều ổn"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 12:30]</div>
+                        <div class="history-text">Searched: "Đến đây"</div>
+                    </div>
+                    <div class="history-item">
+                        <div class="history-timestamp">[2025-11-27 11:45]</div>
+                        <div class="history-text">Searched: "Hôm nay thế nào"</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Favorites Tab -->
+            <div id="favorites" class="tab-content">
+                <div class="tab-title">> FAVORITE_DATA</div>
+                <div class="favorites-grid">
+                    <div class="word-card">
+                        <div class="word-card-title">Xin chào</div>
+                        <div class="word-card-definition">Hello/Goodbye</div>
+                    </div>
+                    <div class="word-card">
+                        <div class="word-card-title">Cảm ơn</div>
+                        <div class="word-card-definition">Thank you</div>
+                    </div>
+                    <div class="word-card">
+                        <div class="word-card-title">Tôi yêu bạn</div>
+                        <div class="word-card-definition">I love you</div>
+                    </div>
+                    <div class="word-card">
+                        <div class="word-card-title">Xin lỗi</div>
+                        <div class="word-card-definition">Sorry/Excuse me</div>
+                    </div>
+                    <div class="word-card">
+                        <div class="word-card-title">Bao nhiêu</div>
+                        <div class="word-card-definition">How much/many</div>
+                    </div>
+                    <div class="word-card">
+                        <div class="word-card-title">Tất cả ổn</div>
+                        <div class="word-card-definition">Everything is fine</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uploads Tab -->
+            <div id="uploads" class="tab-content">
+                <div class="tab-title">> MY_UPLOADS</div>
+                <table class="uploads-table">
+                    <thead>
+                        <tr>
+                            <th>WORD</th>
+                            <th>SUBMISSION_DATE</th>
+                            <th>STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Điều tuyệt vời</td>
+                            <td>2025-11-26 09:30</td>
+                            <td><span class="status-badge badge-approved">APPROVED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Bạn khỏe không</td>
+                            <td>2025-11-25 14:15</td>
+                            <td><span class="status-badge badge-approved">APPROVED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Tôi không hiểu</td>
+                            <td>2025-11-24 11:20</td>
+                            <td><span class="status-badge badge-pending">PENDING</span></td>
+                        </tr>
+                        <tr>
+                            <td>Vui lòng giúp tôi</td>
+                            <td>2025-11-23 16:45</td>
+                            <td><span class="status-badge badge-rejected">REJECTED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Nơi này đẹp lắm</td>
+                            <td>2025-11-22 10:05</td>
+                            <td><span class="status-badge badge-approved">APPROVED</span></td>
+                        </tr>
+                        <tr>
+                            <td>Bạn tên gì</td>
+                            <td>2025-11-21 13:30</td>
+                            <td><span class="status-badge badge-pending">PENDING</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="tab-title">> SETTINGS</div>
+                <form class="settings-form" onsubmit="handlePasswordChange(event)">
+                    <div class="form-group">
+                        <label class="form-label">OLD_PASSWORD</label>
+                        <input type="password" class="form-input" placeholder="Enter current password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">NEW_PASSWORD</label>
+                        <input type="password" class="form-input" placeholder="Enter new password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CONFIRM_PASSWORD</label>
+                        <input type="password" class="form-input" placeholder="Confirm new password" required>
+                    </div>
+                    <button type="submit" class="form-button">CHANGE_PASSWORD</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="editProfile" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeModal('editProfile')">&times;</button>
+            <div class="modal-title">EDIT_PROFILE</div>
+            <form class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">EMAIL</label>
+                    <input type="email" class="form-input" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">PASSWORD</label>
+                    <input type="password" class="form-input" placeholder="Enter your password" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">FULLNAME</label>
+                    <input type="text" class="form-input" placeholder="Enter your fullname" required>
+                </div>
+                <div class="modal-button-group">
+                    <button class="modal-button" onclick="saveProfileChanges()">SAVE</button>
+                    <button class="modal-button cancel" onclick="closeModal('editProfile')">CANCEL</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeEditModal()">×</button>
+            <div class="modal-title">> EDIT_PROFILE</div>
+            <form class="modal-form" onsubmit="handleEditProfile(event)">
+                <div class="form-group">
+                    <label class="form-label">FULL_NAME</label>
+                    <input type="text" class="form-input" id="fullNameInput" placeholder="Enter full name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">PHONE_NUMBER</label>
+                    <input type="tel" class="form-input" id="phoneInput" placeholder="Enter phone number" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">DATE_OF_BIRTH</label>
+                    <input type="date" class="form-input" id="dobInput" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ADDRESS</label>
+                    <input type="text" class="form-input" id="addressInput" placeholder="Enter address" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">BIO</label>
+                    <textarea class="form-input" id="bioInput" placeholder="Enter your bio" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">AVATAR_URL</label>
+                    <input type="text" class="form-input" id="avatarInput" placeholder="Enter avatar image URL" required>
+                </div>
+                <div class="modal-button-group">
+                    <button type="button" class="modal-button cancel" onclick="closeEditModal()">CANCEL</button>
+                    <button type="submit" class="modal-button">SAVE_CHANGES</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all nav tabs
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Mark corresponding nav tab as active
+            event.target.classList.add('active');
+        }
+
+        function handlePasswordChange(event) {
+            event.preventDefault();
+            alert('Password change successful! (This is a demo)');
+            event.target.reset();
+        }
+
+        function openEditModal() {
+            document.getElementById('editModal').classList.add('active');
+            // Pre-fill form with current data
+            document.getElementById('fullNameInput').value = 'Alex Chen';
+            document.getElementById('phoneInput').value = '+84 901 234 567';
+            document.getElementById('dobInput').value = '2000-01-15';
+            document.getElementById('addressInput').value = 'Can Tho, Vietnam';
+            document.getElementById('bioInput').value = 'A passionate developer and sign language enthusiast. Always learning and contributing to the VSL community.';
+            document.getElementById('avatarInput').value = 'https://api.example.com/avatar/user123';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        function handleEditProfile(event) {
+            event.preventDefault();
+            alert('Profile updated successfully! (This is a demo)');
+            closeEditModal();
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        });
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+        }
+
+        function saveProfileChanges() {
+            // Simulate API call
+            console.log('[v0] Profile changes saved');
+            alert('Profile changes saved successfully!');
+            closeModal('editProfile');
+        }
+    </script>
+</body>
+</html>

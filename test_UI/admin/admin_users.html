@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - VSL Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #050505;
+            color: #00ff41;
+            overflow-x: hidden;
+        }
+
+        /* Scanlines Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 65, 0.05),
+                rgba(0, 255, 65, 0.05) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+            z-index: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 40px;
+            width: 250px;
+            height: calc(100vh - 40px);
+            background-color: #050505;
+            border-right: 1px solid #00ff41;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        .sidebar-header {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+            border-bottom: 1px solid #00ff41;
+            padding-bottom: 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            border: 1px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.1);
+            box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .menu-item.active {
+            border: 1px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.15);
+            text-shadow: 0 0 10px #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            min-width: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-left: 250px; /* Adjust margin to account for fixed sidebar */
+        }
+
+        /* Top Status Bar */
+        .status-bar {
+            background-color: #0a0a0a;
+            border-bottom: 2px solid #00ff41;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000; /* Ensure status bar is above other content */
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff41;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            margin-top: 40px; /* Adjust margin to account for fixed status bar */
+        }
+
+        .content-header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+        }
+
+        .content-title {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .content-subtitle {
+            font-size: 11px;
+            color: #00aa2c;
+        }
+
+        /* Terminal Table */
+        .terminal-table-wrapper {
+            border: 2px solid #00ff41;
+            overflow-x: auto;
+        }
+
+        .terminal-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #0a0a0a;
+        }
+
+        .terminal-table thead {
+            background-color: #00ff41;
+            color: #050505;
+        }
+
+        .terminal-table th {
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-right: 1px solid #050505;
+        }
+
+        .terminal-table th:last-child {
+            border-right: none;
+        }
+
+        .terminal-table tbody tr {
+            border-bottom: 1px solid #00ff41;
+            transition: all 0.3s ease;
+        }
+
+        .terminal-table tbody tr:hover {
+            background-color: rgba(0, 255, 65, 0.1);
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .terminal-table td {
+            padding: 12px;
+            font-size: 12px;
+            border-right: 1px solid #00ff41;
+        }
+
+        .terminal-table td:last-child {
+            border-right: none;
+        }
+
+        /* Role Badge */
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border: 1px solid;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .role-badge.admin {
+            border-color: #ff0041;
+            color: #ff0041;
+        }
+
+        .role-badge.user {
+            border-color: #00ff41;
+            color: #00ff41;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: none;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 4px 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .action-btn:hover {
+            background-color: #00ff41;
+            color: #050505;
+            text-shadow: none;
+        }
+
+        .action-btn.warning {
+            border-color: #ff6b00;
+            color: #ff6b00;
+        }
+
+        .action-btn.warning:hover {
+            background-color: #ff6b00;
+        }
+
+        /* User Avatar and Identity Column */
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00ff41;
+            background-color: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-identity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-username {
+            font-weight: bold;
+            color: #00ff41;
+        }
+
+        .user-fullname {
+            font-size: 10px;
+            color: #00aa2c;
+        }
+
+        .user-contact {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-email {
+            color: #00ff41;
+        }
+
+        .user-phone {
+            font-size: 10px;
+            color: #00aa2c;
+        }
+
+        .user-location {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Dossier Modal */
+        .dossier-modal-content {
+            max-width: 700px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .dossier-header {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .dossier-avatar-section {
+            flex-shrink: 0;
+        }
+
+        .dossier-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px solid #00ff41;
+            background-color: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            overflow: hidden;
+            position: relative;
+            animation: glitch-avatar 3s infinite;
+        }
+
+        @keyframes glitch-avatar {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-1px, 1px); }
+            80% { transform: translate(1px, -1px); }
+        }
+
+        .dossier-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .dossier-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-left: 2px solid #00ff41;
+            padding-left: 15px;
+        }
+
+        .dossier-field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .dossier-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #00aa2c;
+        }
+
+        .dossier-value {
+            font-size: 12px;
+            color: #00ff41;
+        }
+
+        .dossier-bio {
+            font-style: italic;
+            color: #00aa2c;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff41;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #0a0a0a;
+            border: 2px solid #00ff41;
+            padding: 20px;
+            border-radius: 0;
+            position: relative;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #00ff41;
+        }
+
+        .modal-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #00ff41;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #ff0041;
+            text-shadow: 0 0 10px #ff0041;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 8px 10px;
+            background-color: #050505;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff41;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 8px 15px;
+            border: 1px solid #00ff41;
+            background-color: #050505;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            background-color: #00ff41;
+            color: #050505;
+        }
+
+        .modal-btn.cancel {
+            border-color: #666;
+            color: #666;
+        }
+
+        .modal-btn.cancel:hover {
+            background-color: #666;
+            color: #0a0a0a;
+        }
+
+        /* Info Text */
+        .info-text {
+            font-size: 10px;
+            color: #00aa2c;
+            margin-top: 5px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 0;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00aa2c;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .user-contact,
+            .user-location {
+                display: none;
+            }
+
+            .terminal-table th:nth-child(3),
+            .terminal-table th:nth-child(4),
+            .terminal-table td:nth-child(3),
+            .terminal-table td:nth-child(4) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+                padding: 10px;
+            }
+
+            .sidebar-header {
+                font-size: 10px;
+            }
+
+            .menu-item {
+                font-size: 10px;
+            }
+
+            .terminal-table {
+                font-size: 10px;
+            }
+
+            .terminal-table th,
+            .terminal-table td {
+                padding: 8px;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            .modal-content {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-lock"></i> VSL_ADMIN<br>CORE
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item" onclick="navigateTo('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>[DASHBOARD]</span>
+                </li>
+                <li class="menu-item active" onclick="navigateTo('users')">
+                    <i class="fas fa-users"></i>
+                    <span>[USER_MANAGER]</span>
+                </li>
+                <li class="menu-item" onclick="navigateTo('contributions')">
+                    <i class="fas fa-file-upload"></i>
+                    <span>[CONTRIBUTIONS]</span>
+                </li>
+                <li class="menu-item" onclick="navigateTo('dictionary')">
+                    <i class="fas fa-book"></i>
+                    <span>[DICTIONARY_DB]</span>
+                </li>
+                <li class="menu-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>[LOGOUT]</span>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-indicator"></span>
+                    <span>SYSTEM: ONLINE | USERS_MODULE: ACTIVE</span>
+                </div>
+                <div class="status-item">
+                    <span id="timestamp"></span>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <div class="content-header">
+                    <div class="content-title">User Management</div>
+                    <div class="content-subtitle">&gt; Total Users: 48 | Admins: 3 | Active: 45</div>
+                </div>
+
+                <!-- User Table -->
+                <div class="terminal-table-wrapper">
+                    <table class="terminal-table">
+                        <thead>
+                            <tr>
+                                <th>Identity</th>
+                                <th>Contact</th>
+                                <th>Location</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="user-identity">
+                                        <div class="user-avatar">
+                                            <i class="fas fa-user-secret"></i>
+                                        </div>
+                                        <div class="user-info">
+                                            <div class="user-username">nguyenvan_a</div>
+                                            <div class="user-fullname">Nguyễn Văn A</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="user-contact">
+                                        <div class="user-email">nguyen@example.com</div>
+                                        <div class="user-phone">+84 912 345 678</div>
+                                    </div>
+                                </td>
+                                <td class="user-location">123 Nguyen Hue St, District 1, HCMC</td>
+                                <td><span class="role-badge user">USER</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn" onclick="openDossierModal(1, 'nguyenvan_a', 'Nguyễn Văn A', 'nguyen@example.com', '+84 912 345 678', '1995-03-15', '123 Nguyen Hue St, District 1, HCMC', 'https://via.placeholder.com/120', 'Translator and language enthusiast')">View Profile</button>
+                                        <button class="action-btn" onclick="openRoleModal(1)">Edit Role</button>
+                                        <button class="action-btn warning" onclick="openPasswordModal(1)">Reset Pass</button>
+                                        <button class="action-btn warning">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-identity">
+                                        <div class="user-avatar">
+                                            <img src="https://via.placeholder.com/40?text=AM" alt="admin_master">
+                                        </div>
+                                        <div class="user-info">
+                                            <div class="user-username">admin_master</div>
+                                            <div class="user-fullname">Admin Master</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="user-contact">
+                                        <div class="user-email">admin@example.com</div>
+                                        <div class="user-phone">+84 987 654 321</div>
+                                    </div>
+                                </td>
+                                <td class="user-location">999 Admin Boulevard, District 1, HCMC</td>
+                                <td><span class="role-badge admin">ADMIN</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn" onclick="openDossierModal(2, 'admin_master', 'Admin Master', 'admin@example.com', '+84 987 654 321', '1990-05-20', '999 Admin Boulevard, District 1, HCMC', 'https://via.placeholder.com/120?text=AM', 'Platform administrator')">View Profile</button>
+                                        <button class="action-btn" onclick="openRoleModal(2)">Edit Role</button>
+                                        <button class="action-btn warning" onclick="openPasswordModal(2)">Reset Pass</button>
+                                        <button class="action-btn warning">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-identity">
+                                        <div class="user-avatar">
+                                            <i class="fas fa-user-secret"></i>
+                                        </div>
+                                        <div class="user-info">
+                                            <div class="user-username">translator_pro</div>
+                                            <div class="user-fullname">Trần Thị B</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="user-contact">
+                                        <div class="user-email">translator@example.com</div>
+                                        <div class="user-phone">+84 901 234 567</div>
+                                    </div>
+                                </td>
+                                <td class="user-location">456 Ly Tu Trong St, District 3, HCMC</td>
+                                <td><span class="role-badge user">USER</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn" onclick="openDossierModal(3, 'translator_pro', 'Trần Thị B', 'translator@example.com', '+84 901 234 567', '1998-07-10', '456 Ly Tu Trong St, District 3, HCMC', '', 'Professional translator and VSL expert')">View Profile</button>
+                                        <button class="action-btn" onclick="openRoleModal(3)">Edit Role</button>
+                                        <button class="action-btn warning" onclick="openPasswordModal(3)">Reset Pass</button>
+                                        <button class="action-btn warning">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-identity">
+                                        <div class="user-avatar">
+                                            <img src="https://via.placeholder.com/40?text=LV" alt="linguist_vsl">
+                                        </div>
+                                        <div class="user-info">
+                                            <div class="user-username">linguist_vsl</div>
+                                            <div class="user-fullname">Lê Văn C</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="user-contact">
+                                        <div class="user-email">linguist@example.com</div>
+                                        <div class="user-phone">+84 923 456 789</div>
+                                    </div>
+                                </td>
+                                <td class="user-location">789 Pasteur St, District 1, HCMC</td>
+                                <td><span class="role-badge admin">ADMIN</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn" onclick="openDossierModal(4, 'linguist_vsl', 'Lê Văn C', 'linguist@example.com', '+84 923 456 789', '1992-11-25', '789 Pasteur St, District 1, HCMC', 'https://via.placeholder.com/40?text=LV', 'Chief linguist and dictionary curator')">View Profile</button>
+                                        <button class="action-btn" onclick="openRoleModal(4)">Edit Role</button>
+                                        <button class="action-btn warning" onclick="openPasswordModal(4)">Reset Pass</button>
+                                        <button class="action-btn warning">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-identity">
+                                        <div class="user-avatar">
+                                            <i class="fas fa-user-secret"></i>
+                                        </div>
+                                        <div class="user-info">
+                                            <div class="user-username">user_learn</div>
+                                            <div class="user-fullname">Phạm Văn D</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="user-contact">
+                                        <div class="user-email">learner@example.com</div>
+                                        <div class="user-phone">+84 934 567 890</div>
+                                    </div>
+                                </td>
+                                <td class="user-location">321 Vo Van Kiet Ave, District 4, HCMC</td>
+                                <td><span class="role-badge user">USER</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn" onclick="openDossierModal(5, 'user_learn', 'Phạm Văn D', 'learner@example.com', '+84 934 567 890', '2000-09-12', '321 Vo Van Kiet Ave, District 4, HCMC', '', 'Active learner and community contributor')">View Profile</button>
+                                        <button class="action-btn" onclick="openRoleModal(5)">Edit Role</button>
+                                        <button class="action-btn warning" onclick="openPasswordModal(5)">Reset Pass</button>
+                                        <button class="action-btn warning">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal A: Change Role -->
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Change User Role</div>
+                <button class="close-btn" onclick="closeRoleModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">User ID</label>
+                    <input type="text" class="form-input" id="roleUserId" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select New Role</label>
+                    <select class="form-select" id="roleSelect">
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                    <div class="info-text">API: PUT /api/admin/users/{id}/role</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeRoleModal()">CANCEL</button>
+                <button class="modal-btn" onclick="submitRoleChange()">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal B: Reset Password -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Force Reset Password</div>
+                <button class="close-btn" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">User ID</label>
+                    <input type="text" class="form-input" id="passUserId" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" class="form-input" id="newPassword" placeholder="Enter new password">
+                    <div class="info-text">API: PUT /api/admin/users/{id}/reset-password</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closePasswordModal()">CANCEL</button>
+                <button class="modal-btn" onclick="submitPasswordReset()">OVERRIDE_PASSWORD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal C: User Dossier -->
+    <div id="dossierModal" class="modal">
+        <div class="dossier-modal-content modal-content">
+            <div class="modal-header">
+                <div class="modal-title">User Dossier - Personnel File</div>
+                <button class="close-btn" onclick="closeDossierModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="dossier-header">
+                    <div class="dossier-avatar-section">
+                        <div class="dossier-avatar">
+                            <span id="dossierAvatarFallback"><i class="fas fa-user-secret"></i></span>
+                            <img id="dossierAvatarImg" style="display:none;" alt="User Avatar">
+                        </div>
+                    </div>
+                    <div class="dossier-info">
+                        <div class="dossier-field">
+                            <div class="dossier-label">Username</div>
+                            <div class="dossier-value" id="dossierUsername"></div>
+                        </div>
+                        <div class="dossier-field">
+                            <div class="dossier-label">Full Name</div>
+                            <div class="dossier-value" id="dossierFullName"></div>
+                        </div>
+                        <div class="dossier-field">
+                            <div class="dossier-label">DOB</div>
+                            <div class="dossier-value" id="dossierDOB"></div>
+                        </div>
+                        <div class="dossier-field">
+                            <div class="dossier-label">Email</div>
+                            <div class="dossier-value" id="dossierEmail"></div>
+                        </div>
+                        <div class="dossier-field">
+                            <div class="dossier-label">Phone</div>
+                            <div class="dossier-value" id="dossierPhone"></div>
+                        </div>
+                        <div class="dossier-field">
+                            <div class="dossier-label">Address</div>
+                            <div class="dossier-value" id="dossierAddress"></div>
+                        </div>
+                        <div class="dossier-field">
+                            <div class="dossier-label">Bio</div>
+                            <div class="dossier-value dossier-bio" id="dossierBio"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const timestamp = now.toLocaleString();
+            document.getElementById('timestamp').textContent = timestamp;
+        }
+        updateTimestamp();
+        setInterval(updateTimestamp, 1000);
+
+        // Role Modal Functions
+        let currentUserId = null;
+
+        function openRoleModal(userId) {
+            currentUserId = userId;
+            document.getElementById('roleUserId').value = userId;
+            document.getElementById('roleModal').classList.add('active');
+        }
+
+        function closeRoleModal() {
+            document.getElementById('roleModal').classList.remove('active');
+            currentUserId = null;
+        }
+
+        function submitRoleChange() {
+            const newRole = document.getElementById('roleSelect').value;
+            console.log(`[v0] Submitting role change for user ${currentUserId} to ${newRole}`);
+            alert(`Role updated to ${newRole} for user ${currentUserId}\nAPI: PUT /api/admin/users/${currentUserId}/role`);
+            closeRoleModal();
+        }
+
+        // Password Modal Functions
+        function openPasswordModal(userId) {
+            currentUserId = userId;
+            document.getElementById('passUserId').value = userId;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+            currentUserId = null;
+        }
+
+        function submitPasswordReset() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (!newPassword) {
+                alert('Please enter a new password');
+                return;
+            }
+            console.log(`[v0] Submitting password reset for user ${currentUserId}`);
+            alert(`Password reset for user ${currentUserId}\nAPI: PUT /api/admin/users/${currentUserId}/reset-password`);
+            closePasswordModal();
+        }
+
+        // Dossier Modal Functions
+        let currentDossierUserId = null;
+
+        function openDossierModal(userId, username, fullName, email, phone, dob, address, avatarUrl, bio) {
+            currentDossierUserId = userId;
+            document.getElementById('dossierUsername').textContent = username;
+            document.getElementById('dossierFullName').textContent = fullName;
+            document.getElementById('dossierDOB').textContent = dob;
+            document.getElementById('dossierEmail').textContent = email;
+            document.getElementById('dossierPhone').textContent = phone;
+            document.getElementById('dossierAddress').textContent = address;
+            document.getElementById('dossierBio').textContent = bio || '[Encrypted Data...]';
+            
+            // Handle avatar
+            const avatarImg = document.getElementById('dossierAvatarImg');
+            const avatarFallback = document.getElementById('dossierAvatarFallback');
+            
+            if (avatarUrl) {
+                avatarImg.src = avatarUrl;
+                avatarImg.style.display = 'block';
+                avatarFallback.style.display = 'none';
+            } else {
+                avatarImg.style.display = 'none';
+                avatarFallback.style.display = 'flex';
+            }
+            
+            document.getElementById('dossierModal').classList.add('active');
+        }
+
+        function closeDossierModal() {
+            document.getElementById('dossierModal').classList.remove('active');
+            currentDossierUserId = null;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const roleModal = document.getElementById('roleModal');
+            const passwordModal = document.getElementById('passwordModal');
+            const dossierModal = document.getElementById('dossierModal');
+            
+            if (event.target === roleModal) {
+                closeRoleModal();
+            }
+            if (event.target === passwordModal) {
+                closePasswordModal();
+            }
+            if (event.target === dossierModal) {
+                closeDossierModal();
+            }
+        }
+
+        // Navigation Functions
+        function navigateTo(page) {
+            switch (page) {
+                case 'dashboard':
+                    window.location.href = 'admin.html';
+                    break;
+                case 'users':
+                    window.location.href = 'admin_users.html';
+                    break;
+                case 'contributions':
+                    window.location.href = 'admin_contributions.html';
+                    break;
+                case 'dictionary':
+                    window.location.href = 'admin_dictionary.html';
+                    break;
+                default:
+                    console.log('Unknown page');
+            }
+        }
+
+        // Logout Function
+        function logout() {
+            window.location.href = 'logout.html';
+        }
+    </script>
+</body>
+</html>

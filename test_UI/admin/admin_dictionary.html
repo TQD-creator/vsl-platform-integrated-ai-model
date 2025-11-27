@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dictionary Manager - VSL Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #050505;
+            color: #00ff41;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(135deg, #050505 0%, #0a0a0a 100%);
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 40px;
+            width: 250px;
+            height: calc(100vh - 40px);
+            background-color: #050505;
+            border-right: 1px solid #00ff41;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        .sidebar-header {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+            border-bottom: 1px solid #00ff41;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header i {
+            min-width: 20px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            letter-spacing: 1px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-item:hover {
+            border: 1px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.1);
+            box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .menu-item.active {
+            border: 1px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.15);
+            text-shadow: 0 0 10px #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            min-width: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background-color: #000;
+            border-bottom: 2px solid #00ff41;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0, 255, 65, 0.15);
+        }
+
+        .status-bar-left {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff41;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: linear-gradient(180deg, #050505 0%, #0a0a0a 100%);
+        }
+
+        /* Terminal Header */
+        .terminal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #00ff41;
+            text-shadow: 0 0 15px #00ff41;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid #00ff41;
+            padding: 10px 0;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(0, 255, 65, 0.5);
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5), inset 0 0 5px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 2px solid #00ff41;
+            background-color: transparent;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: #00ff41;
+            color: #050505;
+            text-shadow: none;
+            box-shadow: 0 0 15px #00ff41;
+        }
+
+        .btn-red {
+            border-color: #ff3333;
+            color: #ff3333;
+        }
+
+        .btn-red:hover {
+            background-color: #ff3333;
+            color: #050505;
+            box-shadow: 0 0 15px #ff3333;
+        }
+
+        /* Data Grid */
+        .data-grid {
+            border: 2px solid #00ff41;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-x: auto;
+            box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background-color: rgba(0, 255, 65, 0.1);
+            border-bottom: 2px solid #00ff41;
+        }
+
+        th {
+            padding: 12px 15px;
+            text-align: left;
+            color: #00ff41;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+            color: #00ff41;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(0, 255, 65, 0.15);
+            box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .truncate {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .video-link {
+            color: #00ff41;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .video-link:hover {
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            border: 1px solid #00ff41;
+            background-color: transparent;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-small:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 10px #00ff41;
+        }
+
+        .btn-small-red {
+            border-color: #ff3333;
+            color: #ff3333;
+        }
+
+        .btn-small-red:hover {
+            background-color: #ff3333;
+            color: #050505;
+            box-shadow: 0 0 10px #ff3333;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #0a0a0a;
+            border: 2px solid #00ff41;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00ff41;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid #00ff41;
+            padding: 10px 0;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: rgba(0, 255, 65, 0.5);
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5), inset 0 0 5px rgba(0, 255, 65, 0.2);
+            border-bottom-color: #00ff41;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .btn-modal {
+            padding: 10px 20px;
+            border: 2px solid #00ff41;
+            background-color: transparent;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .btn-modal:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 15px #00ff41;
+        }
+
+        .btn-modal-gray {
+            border-color: #666;
+            color: #666;
+        }
+
+        .btn-modal-gray:hover {
+            background-color: #666;
+            color: #000;
+            box-shadow: 0 0 15px #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .terminal-header {
+                font-size: 16px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: unset;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 8px 10px;
+            }
+
+            .truncate {
+                max-width: 100px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 150px;
+            }
+
+            .main-content {
+                margin-left: 150px;
+            }
+
+            .menu-item {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+
+            .terminal-header {
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            table {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-lock"></i> VSL_ADMIN<br>CORE
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item" onclick="navigateTo('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>[DASHBOARD]</span>
+                </li>
+                <li class="menu-item" onclick="navigateTo('users')">
+                    <i class="fas fa-users"></i>
+                    <span>[USER_MANAGER]</span>
+                </li>
+                <li class="menu-item" onclick="navigateTo('contributions')">
+                    <i class="fas fa-file-upload"></i>
+                    <span>[CONTRIBUTIONS]</span>
+                </li>
+                <li class="menu-item active" onclick="navigateTo('dictionary')">
+                    <i class="fas fa-book"></i>
+                    <span>[DICTIONARY_DB]</span>
+                </li>
+                <li class="menu-item" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>[LOGOUT]</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-bar-left">
+                    <div class="status-item">
+                        <span class="status-indicator"></span>
+                        <span>SYSTEM: ONLINE</span>
+                    </div>
+                    <div class="status-item">
+                        <span>DATABASE_MANAGER: ACTIVE</span>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <span>REC</span>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Terminal Header -->
+                <div class="terminal-header">DATABASE_MANAGER // MASTER_RECORD</div>
+
+                <!-- Toolbar -->
+                <div class="toolbar">
+                    <input type="text" class="search-input" placeholder="SEARCH_WORD_ID_DEFINITION..." id="searchInput">
+                    <button class="btn" onclick="openCreateModal()">
+                        <i class="fas fa-plus"></i> CREATE_ENTRY
+                    </button>
+                </div>
+
+                <!-- Data Grid -->
+                <div class="data-grid">
+                    <table id="dictionaryTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Word</th>
+                                <th>Definition</th>
+                                <th>Video</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>001</td>
+                                <td>Hello</td>
+                                <td class="truncate">A greeting used to say hi to someone</td>
+                                <td><a href="#" class="video-link">youtube.com/...</a></td>
+                                <td>2025-11-25</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-small" onclick="openEditModal(1, 'Hello', 'youtube.com/hello', 'A greeting used to say hi to someone')">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="btn-small btn-small-red" onclick="deleteEntry(1)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>002</td>
+                                <td>Thank You</td>
+                                <td class="truncate">Expression of gratitude towards someone</td>
+                                <td><a href="#" class="video-link">youtube.com/...</a></td>
+                                <td>2025-11-24</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-small" onclick="openEditModal(2, 'Thank You', 'youtube.com/thankyou', 'Expression of gratitude towards someone')">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="btn-small btn-small-red" onclick="deleteEntry(2)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>003</td>
+                                <td>Please</td>
+                                <td class="truncate">Polite word used to make a request</td>
+                                <td><a href="#" class="video-link">youtube.com/...</a></td>
+                                <td>2025-11-23</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-small" onclick="openEditModal(3, 'Please', 'youtube.com/please', 'Polite word used to make a request')">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="btn-small btn-small-red" onclick="deleteEntry(3)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Modal -->
+    <div class="modal" id="editorModal">
+        <div class="modal-content">
+            <div class="modal-header">ENTRY_EDITOR</div>
+            
+            <div class="form-group">
+                <label class="form-label">WORD</label>
+                <input type="text" class="form-input" id="wordInput" placeholder="Enter word...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">VIDEO_URL</label>
+                <input type="text" class="form-input" id="videoInput" placeholder="Enter video URL...">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">DEFINITION</label>
+                <textarea class="form-textarea" id="definitionInput" placeholder="Enter definition..."></textarea>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-modal" onclick="saveEntry()">
+                    <i class="fas fa-check"></i> SAVE_CHANGES
+                </button>
+                <button class="btn-modal btn-modal-gray" onclick="closeModal()">
+                    <i class="fas fa-times"></i> ABORT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentEditId = null;
+        let isCreateMode = true;
+
+        function openCreateModal() {
+            isCreateMode = true;
+            currentEditId = null;
+            document.getElementById('wordInput').value = '';
+            document.getElementById('videoInput').value = '';
+            document.getElementById('definitionInput').value = '';
+            document.getElementById('editorModal').classList.add('active');
+        }
+
+        function openEditModal(id, word, video, definition) {
+            isCreateMode = false;
+            currentEditId = id;
+            document.getElementById('wordInput').value = word;
+            document.getElementById('videoInput').value = video;
+            document.getElementById('definitionInput').value = definition;
+            document.getElementById('editorModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editorModal').classList.remove('active');
+        }
+
+        function saveEntry() {
+            const word = document.getElementById('wordInput').value;
+            const video = document.getElementById('videoInput').value;
+            const definition = document.getElementById('definitionInput').value;
+
+            if (!word || !video || !definition) {
+                alert('All fields are required');
+                return;
+            }
+
+            if (isCreateMode) {
+                console.log('POST /api/dictionary/create', { word, video, definition });
+            } else {
+                console.log('PUT /api/dictionary/' + currentEditId, { word, video, definition });
+            }
+
+            closeModal();
+        }
+
+        function deleteEntry(id) {
+            if (confirm('Are you sure you want to delete this entry?')) {
+                console.log('DELETE /api/dictionary/' + id);
+            }
+        }
+
+        function navigateTo(page) {
+            window.location.href = 'admin_' + page + '.html';
+        }
+
+        function logout() {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#dictionaryTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('editorModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

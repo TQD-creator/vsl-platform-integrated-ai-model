@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSL Platform - System Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(45deg, #050505 25%, transparent 25%, transparent 75%, #050505 75%, #050505),
+                        linear-gradient(45deg, #050505 25%, transparent 25%, transparent 75%, #050505 75%, #050505);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            background-color: #050505;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            color: #00ff41;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.05),
+                rgba(0, 0, 0, 0.05) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+            animation: scan 8s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(10px);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .auth-card {
+            border: 1px solid #00ff41;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3),
+                        inset 0 0 20px rgba(0, 255, 65, 0.05);
+            animation: cardGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes cardGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(0, 255, 65, 0.3),
+                            inset 0 0 20px rgba(0, 255, 65, 0.05);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(0, 255, 65, 0.5),
+                            inset 0 0 30px rgba(0, 255, 65, 0.1);
+            }
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: glitch 0.3s ease-in-out;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 12px;
+            color: #00cc33;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            opacity: 0.7;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #00ff41;
+            padding-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper:focus-within {
+            box-shadow: 0 5px 0 rgba(0, 255, 65, 0.5);
+            border-bottom-color: #00ff41;
+        }
+
+        .input-icon {
+            color: #00ff41;
+            margin-right: 12px;
+            font-size: 16px;
+            min-width: 20px;
+        }
+
+        input {
+            background: transparent;
+            border: none;
+            color: #00ff41;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            font-size: 14px;
+            flex: 1;
+            outline: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input::placeholder {
+            color: #00884d;
+            opacity: 0.6;
+        }
+
+        input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px rgba(5, 5, 5, 0.9) inset !important;
+            -webkit-text-fill-color: #00ff41 !important;
+        }
+
+        .button-group {
+            margin-top: 30px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #00ff41;
+            z-index: -1;
+            transition: left 0.3s ease;
+        }
+
+        button:hover {
+            color: #050505;
+            left: 0;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.6);
+        }
+
+        button:hover::before {
+            left: 0;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .auth-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .auth-link a {
+            color: #00ff41;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 700;
+        }
+
+        .auth-link a:hover {
+            border-bottom: 1px solid #00ff41;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 30px 20px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            input {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <div class="container">
+        <div class="auth-card">
+            <h1 class="title">ACCESS CONTROL</h1>
+            <div class="subtitle">> SYSTEM LOGIN _</div>
+
+            <form>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" placeholder="> ENTER USERNAME_" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" placeholder="> ENTER PASSWORD_" required>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit">AUTHENTICATE</button>
+                </div>
+            </form>
+
+            <div class="auth-link">
+                NEW USER? <a href="register.html">[INIT_REGISTRATION]</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Detail - VSL Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #050505;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 65, 0.03) 0px,
+                rgba(0, 255, 65, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Status Bar Header */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid #00ff41;
+            background-color: #050505;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #00ff41;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Main Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+
+        /* Left Column - Video */
+        .left-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            border: 2px solid #00ff41;
+            aspect-ratio: 16 / 9;
+            background-color: #0a0a0a;
+            overflow: hidden;
+        }
+
+        /* Corner brackets */
+        .video-container::before,
+        .video-container::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ff41;
+            z-index: 5;
+        }
+
+        .video-container::before {
+            top: -2px;
+            left: -2px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .video-container::after {
+            bottom: -2px;
+            right: -2px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .video-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Scanlines on video */
+        .video-container::inside {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 65, 0.05) 0px,
+                rgba(0, 255, 65, 0.05) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+            pointer-events: none;
+        }
+
+        .video-label {
+            font-size: 11px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        /* Right Column - Data */
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .word-title {
+            font-size: 42px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #00ff41;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            word-break: break-word;
+        }
+
+        /* Definition Block */
+        .definition-block {
+            background-color: #0a0a0a;
+            border: 2px solid #00ff41;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.8;
+            letter-spacing: 0.5px;
+        }
+
+        .definition-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .definition-text {
+            color: #00ff41;
+        }
+
+        /* Metadata */
+        .metadata {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .metadata-item {
+            background-color: #0a0a0a;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            padding: 16px;
+            font-size: 12px;
+        }
+
+        .metadata-label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+            font-size: 10px;
+        }
+
+        .metadata-value {
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        .action-button {
+            flex: 1;
+            background-color: transparent;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            padding: 14px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.8);
+        }
+
+        .action-button.favorite.active {
+            border-color: #ff0040;
+            color: #ff0040;
+        }
+
+        .action-button.favorite.active:hover {
+            background-color: #ff0040;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(255, 0, 64, 0.8);
+        }
+
+        .action-button.report {
+            border-color: #ff0040;
+            color: #ff0040;
+        }
+
+        .action-button.report:hover {
+            background-color: #ff0040;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(255, 0, 64, 0.8);
+        }
+
+        /* Back Button */
+        .back-button {
+            background-color: transparent;
+            border: 2px solid #00ff41;
+            color: #00ff41;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            align-self: flex-start;
+        }
+
+        .back-button:hover {
+            background-color: #00ff41;
+            color: #050505;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .word-title {
+                font-size: 32px;
+            }
+
+            .metadata {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .status-bar {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .container {
+                padding: 0 16px;
+            }
+
+            .action-bar {
+                flex-direction: column;
+            }
+
+            .word-title {
+                font-size: 24px;
+            }
+
+            .definition-block {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-indicator"></span>
+            <span>> SYSTEM: WORD_DETAIL_VIEW</span>
+        </div>
+        <div class="status-item">
+            <span style="font-size: 11px;">REC: LIVE</span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Back Button -->
+        <button class="back-button" onclick="window.history.back();">< BACK</button>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left: Video -->
+            <div class="left-section">
+                <div class="video-container">
+                    <iframe 
+                        class="video-frame"
+                        src="https://www.youtube.com/embed/dQw4w9WgXcQ?controls=1" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="video-label">[VIDEO_GESTURE_DEMONSTRATION] ID: #VID_0023</div>
+            </div>
+
+            <!-- Right: Data -->
+            <div class="right-section">
+                <!-- Word Title -->
+                <h1 class="word-title">NGÔN NGỮ</h1>
+
+                <!-- Definition -->
+                <div class="definition-block">
+                    <div class="definition-label">> DEFINITION</div>
+                    <div class="definition-text">
+                        Hệ thống ký hiệu, âm thanh hoặc hình ảnh được sử dụng để giao tiếp và trao đổi thông tin giữa những người. Ngôn ngữ ký hiệu là phương tiện chính để những người khiếm thị giao tiếp.
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="metadata">
+                    <div class="metadata-item">
+                        <div class="metadata-label">> CREATED_AT</div>
+                        <div class="metadata-value">2024.11.15 14:32</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">> AUTHOR</div>
+                        <div class="metadata-value">LEXICON_TEAM_VN</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">> CATEGORY</div>
+                        <div class="metadata-value">COMMUNICATION</div>
+                    </div>
+                    <div class="metadata-item">
+                        <div class="metadata-label">> DIFFICULTY</div>
+                        <div class="metadata-value">INTERMEDIATE</div>
+                    </div>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="action-bar">
+                    <button class="action-button favorite" id="favoriteBtn" onclick="toggleFavorite()">
+                        <i class="far fa-heart"></i>
+                        FAVORITE
+                    </button>
+                    <button class="action-button report" onclick="alert('Report submitted!')">
+                        <i class="fas fa-flag"></i>
+                        REPORT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isFavorite = false;
+
+        function toggleFavorite() {
+            const btn = document.getElementById('favoriteBtn');
+            isFavorite = !isFavorite;
+            
+            if (isFavorite) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-heart"></i> FAVORITED';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="far fa-heart"></i> FAVORITE';
+            }
+        }
+    </script>
+</body>
+</html>

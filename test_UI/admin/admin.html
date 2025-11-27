@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSL Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #050505;
+            color: #00ff41;
+            overflow: hidden;
+        }
+
+        /* Top Status Bar */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background-color: #0a0a0a;
+            border-bottom: 1px solid #00ff41;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .status-text {
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+
+        .status-indicator {
+            margin-left: auto;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff41;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff41;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 40px;
+            width: 250px;
+            height: calc(100vh - 40px);
+            background-color: #050505;
+            border-right: 1px solid #00ff41;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        .sidebar-header {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+            border-bottom: 1px solid #00ff41;
+            padding-bottom: 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            border: 1px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.1);
+            box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .menu-item.active {
+            border: 1px solid #00ff41;
+            background-color: rgba(0, 255, 65, 0.15);
+            text-shadow: 0 0 10px #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            min-width: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            margin-top: 40px;
+            padding: 30px;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+            background: linear-gradient(135deg, #050505 0%, #0a0a0a 100%);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px #00ff41;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: #0a0a0a;
+            border: 2px solid #00ff41;
+            padding: 25px;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff41, transparent);
+            animation: scan 2s infinite;
+        }
+
+        @keyframes scan {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ff41;
+            text-shadow: 0 0 15px #00ff41;
+            margin-bottom: 5px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .stat-unit {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Alert state for pending contributions */
+        .stat-card.alert {
+            border-color: #ff4444;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+        }
+
+        .stat-card.alert .stat-value {
+            color: #ff4444;
+            text-shadow: 0 0 15px #ff4444;
+            animation: blink 1s infinite;
+        }
+
+        .stat-card.alert .stat-icon {
+            color: #ff4444;
+            text-shadow: 0 0 10px #ff4444;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff41;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff41;
+            box-shadow: 0 0 10px #00ff41;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 20px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .stat-icon {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 60px;
+                padding: 10px;
+            }
+
+            .sidebar-header {
+                font-size: 10px;
+                writing-mode: vertical-rl;
+                text-orientation: mixed;
+                margin-bottom: 15px;
+            }
+
+            .menu-item {
+                padding: 10px 5px;
+                font-size: 10px;
+            }
+
+            .menu-item i {
+                margin-right: 0;
+            }
+
+            .menu-item span {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 60px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 16px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .stat-icon {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Status Bar -->
+    <div class="status-bar">
+        <span class="status-text">
+            <i class="fas fa-terminal"></i> SYSTEM: ADMIN_ACCESS_GRANTED | USER: ADMIN_01
+        </span>
+        <div class="status-indicator">
+            <span class="indicator-dot"></span>
+            <span>ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-lock"></i> VSL_ADMIN<br>CORE
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item active" onclick="navigateTo('dashboard')">
+                <i class="fas fa-chart-line"></i>
+                <span>[DASHBOARD]</span>
+            </li>
+            <li class="menu-item" onclick="navigateTo('users')">
+                <i class="fas fa-users"></i>
+                <span>[USER_MANAGER]</span>
+            </li>
+            <li class="menu-item" onclick="navigateTo('contributions')">
+                <i class="fas fa-file-upload"></i>
+                <span>[CONTRIBUTIONS]</span>
+            </li>
+            <li class="menu-item" onclick="navigateTo('dictionary')">
+                <i class="fas fa-book"></i>
+                <span>[DICTIONARY_DB]</span>
+            </li>
+            <li class="menu-item" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>[LOGOUT]</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 class="page-title">> DASHBOARD_OVERVIEW</h1>
+
+        <div class="stats-grid">
+            <!-- Total Users Card -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-label">TOTAL USERS</div>
+                <div class="stat-value">1,024</div>
+                <div class="stat-unit">active accounts</div>
+            </div>
+
+            <!-- Total Words Card -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="stat-label">TOTAL WORDS</div>
+                <div class="stat-value">5,300</div>
+                <div class="stat-unit">in database</div>
+            </div>
+
+            <!-- Pending Contributions Card (with alert) -->
+            <div class="stat-card alert">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="stat-label">PENDING CONTRIBUTIONS</div>
+                <div class="stat-value">12</div>
+                <div class="stat-unit">awaiting review</div>
+            </div>
+
+            <!-- System Uptime Card -->
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="stat-label">SYSTEM UPTIME</div>
+                <div class="stat-value">99.9%</div>
+                <div class="stat-unit">operational status</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function navigateTo(page) {
+            console.log('Navigating to:', page);
+            // Navigation logic would go here
+        }
+
+        function logout() {
+            console.log('Logging out...');
+            // Logout logic would go here
+        }
+    </script>
+</body>
+</html>
